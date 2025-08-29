@@ -1,66 +1,42 @@
 # evaluate.py — placeholder evaluator
-# src/evaluate.py 
-from __future__ import annotations
-import json, joblib, yaml, numpy as np
-from pathlib import Path
-from data import load_frame, make_splits
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
-from scipy.stats import pearsonr
+import argparse
+"RMSE": float(np.sqrt(mean_squared_error(y_test, y_pred))),
+"MAE": float(mean_absolute_error(y_test, y_pred)),
+"MSE": float(mean_squared_error(y_test, y_pred)),
+"NSE": float(nse(y_test.values, y_pred)),
+"KGE": float(kge(y_test.values, y_pred)),
+}
 
-def nse(y_true, y_pred):
-    num = np.sum((y_true - y_pred)**2)
-    den = np.sum((y_true - np.mean(y_true))**2)
-    return 1.0 - num/den if den > 0 else float("nan")
 
-def kge(y_true, y_pred):
-    """Kling-Gupta Efficiency"""
-    mu_o = np.mean(y_true)
-    mu_s = np.mean(y_pred)
-    std_o = np.std(y_true)
-    std_s = np.std(y_pred)
+import os
+os.makedirs("results", exist_ok=True)
+with open("results/metrics.json", "w", encoding="utf-8") as f:
+json.dump(results, f, indent=2)
 
-    r, _ = pearsonr(y_true, y_pred) if len(y_true) > 1 else (float("nan"), None)
-    alpha = std_s / std_o if std_o > 0 else float("nan")
-    beta  = mu_s / mu_o if mu_o != 0 else float("nan")
 
-    return 1 - np.sqrt((r - 1)**2 + (alpha - 1)**2 + (beta - 1)**2)
+# Save per-row test predictions (optionally with GridID/Year/Month)
+pred_df = pd.DataFrame({"y_test": y_test.values, "y_pred": y_pred})
+if meta_te is not None:
+pred_df = pd.concat([meta_te.reset_index(drop=True), pred_df], axis=1)
+pred_df.to_csv("results/test_predictions.csv", index=False)
 
-def save_json(obj, path: str):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2)
 
-if __name__ == "__main__":
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/baseline.yaml")
-    args = ap.parse_args()
-
-    cfg  = yaml.safe_load(open(args.config, "r", encoding="utf-8"))
-    model = joblib.load("models/xgb_model.joblib")
-
-    df = load_frame(cfg["data"]["file"])
-    (Xtr, ytr, _), (Xva, yva, _), (Xte, yte, _) = make_splits(df, cfg["data"], cfg["split"])
-
-    def metrics(y, p):
-        rmse = mean_squared_error(y, p, squared=False)
-        mae  = mean_absolute_error(y, p)
-        r2   = r2_score(y, p)
-        r, _ = pearsonr(y, p) if len(y) > 1 else (float("nan"), None)
-        return {
-            "RMSE": float(rmse),
-            "MAE": float(mae),
-            "R2": float(r2),
-            "R": float(r),
-            "NSE": float(nse(y, p)),
-            "KGE": float(kge(y, p))
-        }
-
-    out = {}
-    if len(Xva) > 0:
-        out["val"] = metrics(yva, model.predict(Xva))
-    out["test"] = metrics(yte, model.predict(Xte))
-
-    save_json(out, "results/metrics.json")
-    print("[evaluate] done. results -> results/metrics.json")
-
+# Per-Grid metrics if GridID exists
+id_col = config["data"].get("id_col")
+if id_col and id_col in pred_df.columns:
+rows = []
+for gid, g in pred_df.groupby(id_col):
+yt = g["y_test"].to_numpy()
+yp = g["y_pred"].to_numpy()
+if len(yt) == 0:
+continue
+rows.append({
+id_col: gid,
+"MSE": float(np.mean((yt - yp) ** 2)),
+"RMSE": float(np.sqrt(np.mean((yt - yp) ** 2))),
+"NSE": float(nse(yt, yp)),
+"Pbias": float((np.mean(yp - yt) / (np.mean(yt) if np.mean(yt) != 0 else 1e-12)) * 100.0),
+"KGE": float(kge(yt, yp)),
+"R2": float(r2_score(yt, yp)) if len(yt) > 1 else np.nan,
+})
+pd.DataFrame(rows).to_csv("results/metrics_by_grid.csv", index=False)
