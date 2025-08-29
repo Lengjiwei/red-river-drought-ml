@@ -19,7 +19,7 @@ bash scripts/run_all.sh
 ```
 
 ## Data availability
-- Large-scale raw data are NOT included. Use `scripts/download_data.py` to fetch public sources (edit the script to point to ERA5/GLDAS, etc.).
+- Large-scale raw data are NOT included. Use `scripts/download_data.py` to fetch public sources (edit the script to point to ERA5-Land/MSWEP, etc.).
 - Minimal sample dataset: place a few tiny CSV/NetCDF slices under `data/sample/` for reproducibility.
 
 ## Citation
