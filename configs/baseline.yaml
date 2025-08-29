@@ -13,7 +13,7 @@ split:
   ratios:
     train: 0.75              
     test: 0.25                
-  val_within_train: 0.2      
+  val_within_train: 0.0      
   shuffle: true              
   random_state: 1  
 
