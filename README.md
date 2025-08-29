@@ -1,6 +1,6 @@
-# Red River Drought ML (CNN–LSTM + SHAP)
+# XGBoost-Based Monthly SRI Prediction with SHAP Explainability
 
-Reproducible code & minimal dataset scaffold for the manuscript.
+This repository provides a complete pipeline to reproduce the results of our machine learning-based analysis for predicting Standardized Runoff Index (SRI) using XGBoost and interpreting the model with SHAP.
 
 ## What’s inside
 - End-to-end pipeline: data → train → evaluate → interpret (SHAP)
