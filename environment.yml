@@ -1,5 +1,5 @@
 name: drought-ml
-channels: [conda-forge, defaults, pytorch]
+channels: [conda-forge, defaults]
 dependencies:
   - python=3.11
   - numpy
@@ -13,5 +13,5 @@ dependencies:
   - shap
   - pip
   - pip:
-      - hydra-core
       - pyyaml
+      - tensorflow==2.16.*
