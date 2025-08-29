@@ -1,8 +1,9 @@
 seed: 42
 data:
   file: "data/sample/sample_timeseries.csv" 
-  id_col: "GRID_id" 
-  time_col: "date"
+  id_col: "GridID" 
+  year_col: "Year" 
+  month_col: "Month"
   target: "SRI"
   features:['PRE', 'Tmax', "Tmin","Cropland", "Forest","Grassland","Shrubland", "Impervious", "Wetland", "Water", "SOI", "NAO", "NESO", "DMI", "PDO","IM","WYMI","WNPMI","Nightlight", "POP", "GDP", "NDVI", 
                  "SM", "evp","ElvAvg", "SlopeAvg"]
