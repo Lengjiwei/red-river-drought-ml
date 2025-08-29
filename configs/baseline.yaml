@@ -1,25 +1,32 @@
 seed: 42
 data:
-  basin: "RedRiver"
-  freq: "monthly"
-  input_vars: ["PRE","TMP","WYMI","IMI"]
+  file: "data/sample/sample_timeseries.csv" 
+  id_col: "GRID_id" 
+  time_col: "date"
   target: "SRI"
-  lookback: 6
-  path_sample: "data/sample/"
-model:
-  type: "cnn_lstm"
-  cnn_channels: [16, 32]
-  lstm_hidden: 64
-  dropout: 0.2
-train:
-  epochs: 5
-  batch_size: 16
-  lr: 1e-3
+  features:['PRE', 'Tmax', "Tmin","Cropland", "Forest","Grassland","Shrubland", "Impervious", "Wetland", "Water", "SOI", "NAO", "NESO", "DMI", "PDO","IM","WYMI","WNPMI","Nightlight", "POP", "GDP", "NDVI", 
+                 "SM", "evp","ElvAvg", "SlopeAvg"]
+  freq: "M"
+  lookback: 0
 split:
-  method: "time"
-  train: "2000-01:2015-12"
-  val:   "2016-01:2017-12"
-  test:  "2018-01:2019-12"
-shap:
-  n_samples: 200
-  features: ["PRE","TMP","WYMI","IMI"]
+  method: "per_grid_random"   
+  ratios:
+    train: 0.75              
+    test: 0.25                
+  val_within_train: 0.2      
+  shuffle: true              
+  random_state: 1  
+
+xgb:
+  colsample_bytree: 0.95
+  max_depth: 15
+  gamma: 0.1
+  learning_rate: 0.2
+  min_child_weight: 3
+  subsample: 0.9
+  random_state: 1
+  
+ cv:
+  enable: true
+   nfold: 5 
+ 
