@@ -1,54 +1,49 @@
 # train.py — placeholder training loop
-# src/train.py — XGBoost 
-from __future__ import annotations
-import json, numpy as np, yaml, joblib
-from pathlib import Path
-from model import build_xgb
-from data import load_frame, make_splits
-from sklearn.metrics import mean_squared_error
+import argparse
+)
+return float(cv['test-rmse-mean'].min())
 
-def set_seed(seed=42):
-    import random
-    random.seed(seed); np.random.seed(seed)
 
-def save_json(obj, path: str):
-    Path(path).parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(obj, f, indent=2)
+trials = Trials()
+best_idxs = fmin(fn=score, space=space, algo=tpe.suggest, max_evals=200, trials=trials, rstate=np.random.default_rng(seed))
+best = space_eval(space, best_idxs)
+return best
+
+
+
 
 if __name__ == "__main__":
-    import argparse
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--config", default="configs/baseline.yaml")
-    args = ap.parse_args()
+parser = argparse.ArgumentParser()
+parser.add_argument("--config", type=str, default="configs/baseline.yaml")
+args = parser.parse_args()
 
-    cfg = yaml.safe_load(open(args.config, "r", encoding="utf-8"))
-    set_seed(cfg.get("seed", 42))
 
-    df = load_frame(cfg["data"]["file"])
-    (Xtr, ytr, dtr), (Xva, yva, dva), (Xte, yte, dte) = make_splits(
-        df=df, method=cfg["split"]["method"], cfg_data=cfg["data"], cfg_split=cfg["split"]
-    )
+with open(args.config, "r", encoding="utf-8") as f:
+config = yaml.safe_load(f)
 
-    model = build_xgb(cfg["xgb"])
-    if Xva is not None and len(Xva) > 0:
-        model.fit(Xtr, ytr, eval_set=[(Xva, yva)], verbose=False)
-    else:
-        model.fit(Xtr, ytr, verbose=False)
 
-    Path("models").mkdir(parents=True, exist_ok=True)
-    joblib.dump(model, "models/xgb_model.joblib")
-    save_json({
-        "features": cfg["data"]["features"],
-        "target": cfg["data"]["target"],
-        "time_col": cfg["data"]["time_col"],
-        "id_col": cfg["data"]["id_col"],
-        "split": cfg["split"],
-    }, "models/model_meta.json")
+X_train, y_train, X_test, y_test = load_data(config)
 
-    report = {}
-    if Xva is not None and len(Xva) > 0:
-        val_rmse = mean_squared_error(yva, model.predict(Xva), squared=False)
-        report["val_rmse"] = float(val_rmse)
-    save_json(report, "results/train_report.json")
-    print("[train] done. model -> models/xgb_model.joblib")
+
+# Optional hyperopt
+if config.get("model", {}).get("hyperopt", {}).get("enable", False):
+seed = config.get("split", {}).get("seed", 42)
+best = run_hyperopt(X_train, y_train, seed)
+# merge back to params
+cfg_params = config.setdefault("model", {}).setdefault("params", {})
+cfg_params.update({k: v for k, v in best.items() if k in [
+'max_depth','colsample_bytree','min_child_weight','subsample','learning_rate','gamma'
+]})
+# Persist best params for reference
+with open("results/best_params.json", "w", encoding="utf-8") as fp:
+json.dump(cfg_params, fp, indent=2)
+
+
+model = build_model(config)
+model.fit(X_train, y_train)
+
+
+# Save model
+import os
+os.makedirs("models", exist_ok=True)
+joblib.dump(model, "models/xgb_model.joblib")
