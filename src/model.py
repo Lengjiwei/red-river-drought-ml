@@ -1,22 +1,42 @@
-# model.py — minimal CNN-LSTM skeleton (placeholder)
-import torch
-import torch.nn as nn
+# model.py — 
+from __future__ import annotations
+from xgboost import XGBRegressor
+from hyperopt import fmin, tpe, hp, STATUS_OK, Trials, space_eval
 
-class CNNLSTM(nn.Module):
-    def __init__(self, in_channels=1, cnn_channels=(16,32), lstm_hidden=64, dropout=0.2):
-        super().__init__()
-        self.cnn = nn.Sequential(
-            nn.Conv1d(in_channels, cnn_channels[0], kernel_size=3, padding=1),
-            nn.ReLU(),
-            nn.Conv1d(cnn_channels[0], cnn_channels[1], kernel_size=3, padding=1),
-            nn.ReLU(),
-        )
-        self.lstm = nn.LSTM(cnn_channels[1], lstm_hidden, batch_first=True)
-        self.head = nn.Sequential(nn.Dropout(dropout), nn.Linear(lstm_hidden, 1))
-    def forward(self, x):
-        # x: [B, T, F]; treat F as channels
-        x = x.transpose(1, 2)       # [B, F, T]
-        x = self.cnn(x).transpose(1, 2)
-        out, _ = self.lstm(x)
-        y = self.head(out[:, -1, :]).squeeze(-1)
-        return y
+%%time
+# Choose hyperparameter domain to search over
+space = {
+        'max_depth':hp.choice('max_depth', np.arange(1, 16, 2, dtype=int)),
+        'colsample_bytree':hp.quniform('colsample_bytree', 0.5, 1.0, 0.05),
+        'min_child_weight':hp.choice('min_child_weight', np.arange(1, 12, 1, dtype=int)),
+        'subsample':        hp.quniform('subsample', 0.3, 1.0, 0.05),
+        'learning_rate':    hp.choice('learning_rate',    np.arange(0.05, 1, 0.05)),
+        'gamma': hp.quniform('gamma', 0.1, 1, 0.05),
+        'objective':'reg:squarederror',
+        'eval_metric': 'r2_score',
+    }
+def score(params):
+    #Cross-validation
+    d_train = xgboost.DMatrix(X_coords,y) 
+    cv_results = xgboost.cv(params, d_train, nfold = 5, num_boost_round=50,
+                        early_stopping_rounds = 10, metrics = 'rmse', seed = 0)
+    loss = min(cv_results['test-rmse-mean'])
+    return loss
+
+def optimize(trials, space):
+    best = fmin(score, space, algo=tpe.suggest, max_evals=200,
+                trials=trials)#Add seed to fmin function
+    return best    
+
+    trials = Trials()
+    best_params = optimize(trials, space)
+    # Return the best parameters
+    best_params = space_eval(space, best_params)
+    best_params
+
+xgb_model = XGBRegressor(colsample_bytree=0.95,max_depth=15,gamma=0.1,learning_rate= 0.2, min_child_weight=3,subsample=0.9,random_state=1)
+
+xgb_model.fit(X_train.values, y_train)
+
+
+
