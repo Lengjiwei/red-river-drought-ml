@@ -1,9 +1,9 @@
 cff-version: 1.2.0
-title: "Red River Drought ML: CNN–LSTM + SHAP"
+title: "Red River Drought ML:XGBoost + SHAP"
 authors:
   - family-names: YourSurname
     given-names: YourGiven
 version: "1.0.0"
 doi: "10.5281/zenodo.xxxxx"   # replace after Zenodo release
 date-released: 2025-08-29
-url: "https://github.com/<yourname>/red-river-drought-ml"
+url: "https://github.com/Lengjiwei/red-river-drought-ml"
