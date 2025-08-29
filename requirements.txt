@@ -3,9 +3,9 @@ pandas
 xarray
 netCDF4
 scikit-learn
-torch
+tensorflow==2.16.
 torchvision
 matplotlib
 shap
-hydra-core
+pyarrow
 pyyaml
