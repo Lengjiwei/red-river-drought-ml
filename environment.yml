@@ -1,0 +1,17 @@
+name: drought-ml
+channels: [conda-forge, defaults, pytorch]
+dependencies:
+  - python=3.11
+  - numpy
+  - pandas
+  - xarray
+  - netcdf4
+  - scikit-learn
+  - pytorch
+  - torchvision
+  - matplotlib
+  - shap
+  - pip
+  - pip:
+      - hydra-core
+      - pyyaml

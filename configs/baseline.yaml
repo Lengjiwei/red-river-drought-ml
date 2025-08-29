@@ -1,0 +1,25 @@
+seed: 42
+data:
+  basin: "RedRiver"
+  freq: "monthly"
+  input_vars: ["PRE","TMP","WYMI","IMI"]
+  target: "SRI"
+  lookback: 6
+  path_sample: "data/sample/"
+model:
+  type: "cnn_lstm"
+  cnn_channels: [16, 32]
+  lstm_hidden: 64
+  dropout: 0.2
+train:
+  epochs: 5
+  batch_size: 16
+  lr: 1e-3
+split:
+  method: "time"
+  train: "2000-01:2015-12"
+  val:   "2016-01:2017-12"
+  test:  "2018-01:2019-12"
+shap:
+  n_samples: 200
+  features: ["PRE","TMP","WYMI","IMI"]

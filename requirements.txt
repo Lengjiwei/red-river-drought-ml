@@ -1,0 +1,11 @@
+numpy
+pandas
+xarray
+netCDF4
+scikit-learn
+torch
+torchvision
+matplotlib
+shap
+hydra-core
+pyyaml
